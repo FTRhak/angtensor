@@ -119,6 +119,10 @@
           }
         }
       }
-    }},
-  "defaultProject": "angtensor"
+    }
+  },
+  "defaultProject": "angtensor",
+  "cli": {
+    "analytics": false
+  }
 }

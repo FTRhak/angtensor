@@ -45,16 +45,16 @@ export class AppComponent implements OnInit {
       for (let j = 0; j < size; j++) {
         const img = cnt.getImageData(j, i, 1, 1).data;
         const pixel = img[3]; // > 0 ? 1 : 0;
-        line.push(pixel);
-        inputData.push(pixel / 255);
+        line.push([pixel / 255, pixel / 255]);
       }
-      // console.log('Img:', line);
+      inputData.push(line);
       line = [];
     }
+    console.table(inputData);
     outPut[this.inputNumber] = 1;
 
-    const xs = tf.tensor2d(inputData, [inputData.length, 1]);
-    const ys = tf.tensor2d(outPut, [outPut.length, 1]);
+    const xs = tf.tensor3d(inputData, [10, 10, 2], 'float32');
+    const ys = tf.tensor1d(outPut, 'float32');
     console.log('Train');
     this.model.fit(xs, ys, { epochs: 10 }).then((ev) => {
       console.log('+++++++', ev);
@@ -68,8 +68,10 @@ export class AppComponent implements OnInit {
 
   initTFModel(): void {
     this.model = tf.sequential();
-    this.model.add(tf.layers.dense({ units: 1, inputShape: [1], inputDim: 100, activation: 'relu' }));
-    this.model.add(tf.layers.dense({ units: 10, inputShape: [10], activation: 'softmax' }));
+    this.model.add(tf.layers.dense(
+      { units: 100, inputShape: [10, 10], batchInputShape: [10, 10, 2], inputDim: 10, activation: 'relu' }
+    ));
+    this.model.add(tf.layers.dense({ units: 10, batchInputShape: [1, 10] }));
 
     this.model.compile({ loss: 'meanSquaredError', optimizer: 'sgd' });
     console.log('RRRR', this.model.summary());
