@@ -80,8 +80,12 @@ export class AppComponent implements OnInit {
     const countExamples = this.inputData.length;
 
     // const t = tf.layers.conv2d({kernelSize: [10, 10], filters: 1});
-    const xs = tf.tensor3d(this.inputData, [countExamples, 10, 10], 'float32');
-    const ys = tf.tensor2d(this.outputData, [countExamples, 10], 'float32');
+    const xs = [];
+    const ys = [];
+    this.inputData.forEach((el, index) => {
+      xs.push(tf.tensor2d(this.inputData[index], [10, 10], 'float32'));
+      ys.push(tf.tensor1d(this.outputData[index], 'float32'));
+    });
     console.log('Train');
     this.model.fit(xs, ys, { epochs: 10 }).then((ev) => {
       console.log('+++++++', ev);
@@ -96,7 +100,7 @@ export class AppComponent implements OnInit {
   initTFModel(): void {
     this.model = tf.sequential();
     this.model.add(tf.layers.dense(
-      { units: 100, inputShape: [10, 10], batchInputShape: [9, 10, 10], inputDim: 10, activation: 'relu' }
+      { units: 100, inputShape: [10, 10], batchInputShape: [10, 10], inputDim: 10, activation: 'relu' }
     ));
     this.model.add(tf.layers.dense({ units: 10, batchInputShape: [1, 10] }));
 
