@@ -6,8 +6,22 @@
     <div>
       <input type="number" min="0" max="9" [(ngModel)]="inputNumber">
     </div>
-    <div>
+    <div class="nav">
       <button (click)="onClear()">Clear</button>
+      <button (click)="onAdd()">Add</button>
+      <span>{{inputData.length}}</span> |
+      <span>{{outputData.length}}</span>
+    </div>
+    <div class="nav">
+      <button (click)="onSave()">Save</button>
+      <button (click)="onLoad()">Load</button>
+    </div>
+    <div class="nav">
       <button (click)="onTryTrain()">Try</button>
+    </div>
+    <div class="previews">
+      <ng-container *ngFor="let item of inputData; index as i">
+        <app-img-preview [data]="item" [value]="outputData[i]"></app-img-preview>
+      </ng-container>
     </div>
 </div>

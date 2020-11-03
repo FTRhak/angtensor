@@ -14,6 +14,9 @@ export class AppComponent implements OnInit {
   private canvasRef: HTMLCanvasElement;
   private context: CanvasRenderingContext2D;
 
+  public inputData = [];
+  public outputData = [];
+
   private model: tf.Sequential;
 
   inputNumber: number;
@@ -24,12 +27,11 @@ export class AppComponent implements OnInit {
     /**/
   }
 
-  onTryTrain() {
+  onAdd(): void {
     if (this.inputNumber < 0 || this.inputNumber > 9 ) {
       return;
     }
     const size = 10;
-    console.log('Try');
     const cn = document.createElement('canvas');
     cn.setAttribute('class', 'img-example');
     cn.width = size;
@@ -40,21 +42,46 @@ export class AppComponent implements OnInit {
     document.body.appendChild(cn);
     let line = [];
     const outPut = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-    const inputData = [];
+    const inputDataImg = [];
     for (let i = 0; i < size; i++) {
       for (let j = 0; j < size; j++) {
         const img = cnt.getImageData(j, i, 1, 1).data;
         const pixel = img[3]; // > 0 ? 1 : 0;
-        line.push([pixel / 255, pixel / 255]);
+        line.push(pixel / 255);
       }
-      inputData.push(line);
+      inputDataImg.push(line);
       line = [];
     }
-    console.table(inputData);
+    // console.table(inputDataImg);
+    cn.remove();
     outPut[this.inputNumber] = 1;
 
-    const xs = tf.tensor3d(inputData, [10, 10, 2], 'float32');
-    const ys = tf.tensor1d(outPut, 'float32');
+    this.inputData.push(inputDataImg);
+    this.outputData.push(outPut);
+  }
+
+  onSave(): void {
+    const inputToString = JSON.stringify(this.inputData);
+    const outputToString = JSON.stringify(this.outputData);
+    window.localStorage.setItem('input', inputToString);
+    window.localStorage.setItem('output', outputToString);
+  }
+
+  onLoad(): void {
+    const input = window.localStorage.getItem('input');
+    const output = window.localStorage.getItem('output');
+    this.inputData = JSON.parse(input);
+    this.outputData = JSON.parse(output);
+  }
+
+  onTryTrain(): void {
+    console.log('inputData:', this.inputData);
+    console.log('outputData:', this.outputData);
+    const countExamples = this.inputData.length;
+
+    // const t = tf.layers.conv2d({kernelSize: [10, 10], filters: 1});
+    const xs = tf.tensor3d(this.inputData, [countExamples, 10, 10], 'float32');
+    const ys = tf.tensor2d(this.outputData, [countExamples, 10], 'float32');
     console.log('Train');
     this.model.fit(xs, ys, { epochs: 10 }).then((ev) => {
       console.log('+++++++', ev);
@@ -69,7 +96,7 @@ export class AppComponent implements OnInit {
   initTFModel(): void {
     this.model = tf.sequential();
     this.model.add(tf.layers.dense(
-      { units: 100, inputShape: [10, 10], batchInputShape: [10, 10, 2], inputDim: 10, activation: 'relu' }
+      { units: 100, inputShape: [10, 10], batchInputShape: [9, 10, 10], inputDim: 10, activation: 'relu' }
     ));
     this.model.add(tf.layers.dense({ units: 10, batchInputShape: [1, 10] }));
 
@@ -92,7 +119,7 @@ export class AppComponent implements OnInit {
     this.canvasRef = this.canvas.nativeElement;
     this.context = this.canvasRef.getContext('2d');
     this.context.lineCap = 'round';
-    this.context.lineWidth = 8;
+    this.context.lineWidth = 10;
   }
 
   onCanvasMMove(e): void {
