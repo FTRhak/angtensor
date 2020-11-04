@@ -75,6 +75,29 @@ export class AppComponent implements OnInit {
     this.outputData = JSON.parse(output);
   }
 
+  exportString(content: string, file: string): void {
+    const element = document.createElement('a');
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(content));
+    element.setAttribute('download', file);
+
+    element.style.display = 'none';
+    document.body.appendChild(element);
+
+    element.click();
+
+    document.body.removeChild(element);
+  }
+  onExport(): void {
+    const input = window.localStorage.getItem('input');
+    const output = window.localStorage.getItem('output');
+    this.exportString(input, 'input.txt');
+    this.exportString(output, 'output.txt');
+  }
+
+  onImport(): void {
+
+  }
+
   onTryTrain(): void {
     console.log('inputData:', this.inputData);
     console.log('outputData:', this.outputData);
