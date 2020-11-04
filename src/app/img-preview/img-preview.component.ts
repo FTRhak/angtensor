@@ -7,9 +7,9 @@ import { AfterViewInit, Component, ElementRef, Input, OnInit, ViewChild, ViewChi
 })
 export class ImgPreviewComponent implements OnInit, AfterViewInit {
   @ViewChild('cnv') cn: ElementRef;
-  private size = 10;
   public answer: number = null;
-  @Input() data: number[][] = [];
+  @Input() size = 10;
+  @Input() data: number[] = [];
   @Input() set value(val: number[]) {
     val.forEach((el, index) => {
       if (el === 1) {
@@ -36,7 +36,7 @@ export class ImgPreviewComponent implements OnInit, AfterViewInit {
     for (let i = 0; i < this.size; i++) {
       for (let j = 0; j < this.size; j++) {
         const pixelindex = (i * this.size + j) * 4;
-        const pixel = this.data[i][j];
+        const pixel = this.data[i * this.size + j];
         imagedata.data[pixelindex] = 0;
         imagedata.data[pixelindex + 1] = 0;
         imagedata.data[pixelindex + 2] = 0;
