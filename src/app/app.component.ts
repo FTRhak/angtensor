@@ -98,38 +98,14 @@ export class AppComponent implements OnInit {
 
   }
 
-  onTryTrain(): void {
-    console.log('inputData:', this.inputData);
-    console.log('outputData:', this.outputData);
-    const countExamples = this.inputData.length;
-
-    // const t = tf.layers.conv2d({kernelSize: [10, 10], filters: 1});
-    const xs = [];
-    const ys = [];
-    this.inputData.forEach((el, index) => {
-      xs.push(tf.tensor2d(this.inputData[index], [100, 1], 'float32'));
-      ys.push(tf.tensor2d(this.outputData[index], [10, 1], 'float32'));
-    });
-    console.log('Train');
-    // tf.stack(xs)
-    this.model.fit(xs, ys, { epochs: 10 }).then((ev) => {
-      console.log('+++++++', ev);
-      // Use the model to do inference on a data point the model hasn't seen before:
-      //  const res = this.model.predict(tf.tensor2d([5], [1, 1])).toString();
-      //  console.log('RES:', res);
-      // Open the browser devtools to see the output
-    });
-
-  }
-
   initTFModel(): void {
     this.model = tf.sequential();
     this.model.add(tf.layers.dense(
-      { units: 20, inputShape: [100, 1], batchInputShape: [100, 1], inputDim: 10, activation: 'relu' }
+      { units: 20, inputShape: [100], batchInputShape: [ 100, 1],  inputDim: 1, activation: 'relu' }
     ));
     this.model.add(tf.layers.dropout({ rate: 0.5 }));
     // this.model.add(tf.layers.dense({ units: 10, batchInputShape: [1, 10] }));
-    this.model.add(tf.layers.dense({ units: 10, activation: 'softmax' }));
+    this.model.add(tf.layers.dense({ units: 1, activation: 'softmax' }));
 
     this.model.compile({
       loss: 'meanSquaredError',
@@ -138,6 +114,32 @@ export class AppComponent implements OnInit {
     });
     // this.model.compile({ loss: 'meanSquaredError', optimizer: 'sgd' });
     console.log('RRRR', this.model.summary());
+  }
+
+  onTryTrain(): void {
+    console.log('inputData:', this.inputData);
+    console.log('outputData:', this.outputData);
+    const countExamples = this.inputData.length;
+
+    // const t = tf.layers.conv2d({kernelSize: [10, 10], filters: 1});
+    //const xs = [];
+    //const ys = [];
+    /*this.inputData.forEach((el, index) => {
+      xs.push(tf.tensor2d(this.inputData[index], [100, 1], 'float32'));
+      ys.push(tf.tensor2d(this.outputData[index], [10, 1], 'float32'));
+    });*/
+    let xs = tf.tensor1d(this.inputData[0], 'float32');
+    let ys = tf.tensor1d(this.outputData[0], 'float32');
+    console.log('Train', this.inputData[0]);
+    // tf.stack(xs)
+    this.model.fit(xs, ys, { epochs: 10, batchSize: 1 }).then((ev) => {
+      console.log('+++++++', ev);
+      // Use the model to do inference on a data point the model hasn't seen before:
+      //  const res = this.model.predict(tf.tensor2d([5], [1, 1])).toString();
+      //  console.log('RES:', res);
+      // Open the browser devtools to see the output
+    });
+
   }
 
   initCanvas(): void {
