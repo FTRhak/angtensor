@@ -23,25 +23,20 @@ export class AppComponent implements OnInit {
 
   ngOnInit(): void {
     this.initCanvas();
-    this.initTFModel();
+
     /**/
   }
 
-  onAdd(): void {
-    if (this.inputNumber < 0 || this.inputNumber > 9) {
-      return;
-    }
+  private loadImage() {
     const size = 10;
     const cn = document.createElement('canvas');
     cn.setAttribute('class', 'img-example');
     cn.width = size;
     cn.height = size;
     const cnt = cn.getContext('2d');
-    // this.context.save()
+
     cnt.drawImage(this.canvasRef, 0, 0, size, size);
     document.body.appendChild(cn);
-    // let line = [];
-    const outPut = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
     const inputDataImg = [];
     for (let i = 0; i < size; i++) {
       for (let j = 0; j < size; j++) {
@@ -50,13 +45,61 @@ export class AppComponent implements OnInit {
         inputDataImg.push(pixel / 255);
       }
     }
-    // inputDataImg.push(line);
-    // console.table(inputDataImg);
     cn.remove();
+    return inputDataImg;
+  }
+
+  onAdd(): void {
+    if (this.inputNumber < 0 || this.inputNumber > 9) {
+      return;
+    }
+
+    const inputDataImg = this.loadImage();
+    const outPut = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
     outPut[this.inputNumber] = 1;
 
     this.inputData.push(inputDataImg);
     this.outputData.push(outPut);
+  }
+
+  onGenerate(): void {
+    const fontsCollection = ['serif', 'Arial', 'Verdana', 'system-ui', 'Verdana'];
+    const fCount = fontsCollection.length;
+
+    for (let k = 0; k < 500; k++) {
+      let num = Math.floor(Math.random() * 10);
+      if (num === 10) {
+        num = 9;
+      }
+      const shiftX = 1; // Math.floor(Math.random() * 3);
+      const shiftY = 1; // Math.floor(Math.random() * 3);
+
+      const size = 10;
+      const cn = document.createElement('canvas');
+      cn.setAttribute('class', 'img-example');
+      cn.width = size;
+      cn.height = size;
+      const cnt = cn.getContext('2d');
+
+      const font = fontsCollection[Math.round(Math.random() * fCount)];
+      cnt.font = '10px ' + font;
+      cnt.fillText(num + '', shiftX, 10 - shiftY);
+      document.body.appendChild(cn);
+
+      const inputDataImg = [];
+      for (let i = 0; i < size; i++) {
+        for (let j = 0; j < size; j++) {
+          const img = cnt.getImageData(j, i, 1, 1).data;
+          const pixel = img[3]; // > 0 ? 1 : 0;
+          inputDataImg.push(pixel / 255);
+        }
+      }
+      this.inputData.push(inputDataImg);
+      const outPut = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+      outPut[num] = 1;
+      this.outputData.push(outPut);
+      cn.remove();
+    }
   }
 
   onSave(): void {
@@ -101,45 +144,43 @@ export class AppComponent implements OnInit {
   initTFModel(): void {
     this.model = tf.sequential();
     this.model.add(tf.layers.dense(
-      { units: 20, inputShape: [100], batchInputShape: [ 100, 1],  inputDim: 1, activation: 'relu' }
+      { units: 50, inputShape: [100], /*batchInputShape: [ 100, 1], */ /*inputDim: 1,*/ activation: 'relu' }
     ));
     this.model.add(tf.layers.dropout({ rate: 0.5 }));
-    // this.model.add(tf.layers.dense({ units: 10, batchInputShape: [1, 10] }));
-    this.model.add(tf.layers.dense({ units: 1, activation: 'softmax' }));
+    this.model.add(tf.layers.dense({ units: 10, activation: 'softmax' }));
 
     this.model.compile({
       loss: 'meanSquaredError',
       optimizer: 'rmsprop',
       metrics: ['accuracy']
     });
-    // this.model.compile({ loss: 'meanSquaredError', optimizer: 'sgd' });
     console.log('RRRR', this.model.summary());
   }
 
   onTryTrain(): void {
-    console.log('inputData:', this.inputData);
-    console.log('outputData:', this.outputData);
+    this.initTFModel();
     const countExamples = this.inputData.length;
 
-    // const t = tf.layers.conv2d({kernelSize: [10, 10], filters: 1});
-    //const xs = [];
-    //const ys = [];
-    /*this.inputData.forEach((el, index) => {
-      xs.push(tf.tensor2d(this.inputData[index], [100, 1], 'float32'));
-      ys.push(tf.tensor2d(this.outputData[index], [10, 1], 'float32'));
-    });*/
-    let xs = tf.tensor1d(this.inputData[0], 'float32');
-    let ys = tf.tensor1d(this.outputData[0], 'float32');
-    console.log('Train', this.inputData[0]);
-    // tf.stack(xs)
-    this.model.fit(xs, ys, { epochs: 10, batchSize: 1 }).then((ev) => {
-      console.log('+++++++', ev);
-      // Use the model to do inference on a data point the model hasn't seen before:
-      //  const res = this.model.predict(tf.tensor2d([5], [1, 1])).toString();
-      //  console.log('RES:', res);
-      // Open the browser devtools to see the output
+    const xs = tf.tensor2d(this.inputData, [countExamples, 100], 'float32');
+    const ys = tf.tensor2d(this.outputData, [countExamples, 10], 'float32');
+    console.log('-----Train-----');
+    this.model.fit(xs, ys, {
+      epochs: 150,
+      batchSize: countExamples,
+      callbacks: {
+        onEpochEnd: (epoch, log) => console.log(`Epoch ${epoch}: loss = ${log.loss}`)
+      }
+    }).then((ev) => {
+      console.log('History::', ev);
     });
 
+  }
+
+  onGo(): void {
+    const img = this.loadImage();
+    const xs = tf.tensor2d([img], [1, 100], 'float32');
+    const res = this.model.predict(xs).toString();
+    console.log('RESULT:', res);
   }
 
   initCanvas(): void {
@@ -168,5 +209,24 @@ export class AppComponent implements OnInit {
 
   onClear(): void {
     this.context.clearRect(0, 0, this.canvasRef.width, this.canvasRef.height);
+  }
+
+  onDo(): void {
+    const model = tf.sequential();
+    model.add(tf.layers.dense({ units: 100, activation: 'relu', inputShape: [10] }));
+    model.add(tf.layers.dense({ units: 1, activation: 'linear' }));
+    model.compile({ optimizer: 'sgd', loss: 'meanSquaredError' });
+
+    const xs = tf.randomNormal([100, 10]);
+    const ys = tf.randomNormal([100, 1]);
+    console.log('RR:', xs.print());
+    console.log('TT', ys.print());
+    return;
+    model.fit(xs, ys, {
+      epochs: 100,
+      callbacks: {
+        onEpochEnd: (epoch, log) => console.log(`Epoch ${epoch}: loss = ${log.loss}`)
+      }
+    });
   }
 }

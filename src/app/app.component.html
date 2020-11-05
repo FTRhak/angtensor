@@ -1,4 +1,7 @@
 <h1>Angular TF</h1>
+<div class="nav">
+  <button (click)="onGo()">GO</button>
+</div>
 <div>
   <canvas #canvas width="100" height="100" 
     (mousemove)="onCanvasMMove($event)"
@@ -11,6 +14,9 @@
       <button (click)="onAdd()">Add</button>
       <span>{{inputData.length}}</span> |
       <span>{{outputData.length}}</span>
+    </div>
+    <div class="nav">
+      <button (click)="onGenerate()">Generate</button>
     </div>
     <div class="nav">
       <button (click)="onSave()">Save</button>
