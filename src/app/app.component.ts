@@ -66,13 +66,13 @@ export class AppComponent implements OnInit {
     const fontsCollection = ['serif', 'Arial', 'Verdana', 'system-ui', 'Verdana'];
     const fCount = fontsCollection.length;
 
-    for (let k = 0; k < 500; k++) {
+    for (let k = 0; k < 5000; k++) {
       let num = Math.floor(Math.random() * 10);
       if (num === 10) {
         num = 9;
       }
-      const shiftX = 1; // Math.floor(Math.random() * 3);
-      const shiftY = 1; // Math.floor(Math.random() * 3);
+      const shiftX = Math.floor(Math.random() * 2);
+      const shiftY = Math.floor(Math.random() * 2);
 
       const size = 10;
       const cn = document.createElement('canvas');
@@ -144,8 +144,9 @@ export class AppComponent implements OnInit {
   initTFModel(): void {
     this.model = tf.sequential();
     this.model.add(tf.layers.dense(
-      { units: 50, inputShape: [100], /*batchInputShape: [ 100, 1], */ /*inputDim: 1,*/ activation: 'relu' }
+      { units: 25, inputShape: [100], /*batchInputShape: [ 100, 1], */ /*inputDim: 1,*/ activation: 'relu' }
     ));
+    //this.model.add(tf.layers.dense({ units: 10, activation: 'softmax' }));
     this.model.add(tf.layers.dropout({ rate: 0.5 }));
     this.model.add(tf.layers.dense({ units: 10, activation: 'softmax' }));
 
@@ -159,21 +160,32 @@ export class AppComponent implements OnInit {
 
   onTryTrain(): void {
     this.initTFModel();
-    const countExamples = this.inputData.length;
+    const inputList = [...this.inputData];
+    const outputList = [...this.outputData];
+    const countTest = 50;
+    const countExamples = inputList.length - countTest;
 
-    const xs = tf.tensor2d(this.inputData, [countExamples, 100], 'float32');
-    const ys = tf.tensor2d(this.outputData, [countExamples, 10], 'float32');
+    const xs = tf.tensor2d(inputList.splice(0, countExamples), [countExamples, 100], 'float32');
+    const ys = tf.tensor2d(outputList.splice(0, countExamples), [countExamples, 10], 'float32');
+
+    const xsTest = tf.tensor2d(inputList, [countTest, 100], 'float32');
+    const ysTest = tf.tensor2d(outputList, [countTest, 10], 'float32');
     console.log('-----Train-----');
     this.model.fit(xs, ys, {
-      epochs: 150,
-      batchSize: countExamples,
+      epochs: 2500,
+      batchSize: 100,
+      validationData: [xsTest, ysTest],
       callbacks: {
-        onEpochEnd: (epoch, log) => console.log(`Epoch ${epoch}: loss = ${log.loss}`)
+        onEpochEnd: (epoch, log) => {
+          console.log(`Epoch ${epoch}: loss = ${log.loss}  val_loss = ${log.val_loss}  acc = ${log.acc}   val_acc = ${log.val_acc}`);
+        }
       }
     }).then((ev) => {
       console.log('History::', ev);
     });
 
+    // const score = this.model.evaluate(xsTest, ysTest, {verbose: 0 });
+    // console.log('SCORE:', score);
   }
 
   onGo(): void {
