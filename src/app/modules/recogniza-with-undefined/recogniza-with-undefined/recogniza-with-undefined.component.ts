@@ -65,11 +65,15 @@ export class RecognizaWithUndefinedComponent implements OnInit {
   onGenerate(): void {
     const fontsCollection = ['serif', 'Arial', 'Verdana', 'system-ui', 'Verdana'];
     const fCount = fontsCollection.length;
+    const undefinedItems = ['a', 'd', 't', '+', 'y', '-', 'f', 'w', 'v', '=', 'z', 'x', 's', '.', '^', 'r'];
 
     for (let k = 0; k < 5000; k++) {
-      let num = Math.floor(Math.random() * 10);
-      if (num === 10) {
-        num = 9;
+      let num: any = Math.floor(Math.random() * 13);
+      let answer = num;
+      if (num >= 10) {
+        const index = Math.round(Math.random() * (undefinedItems.length - 1));
+        num = undefinedItems[index];
+        answer = 10;
       }
       const shiftX = Math.floor(Math.random() * 2);
       const shiftY = Math.floor(Math.random() * 2);
@@ -95,8 +99,8 @@ export class RecognizaWithUndefinedComponent implements OnInit {
         }
       }
       this.inputData.push(inputDataImg);
-      const outPut = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-      outPut[num] = 1;
+      const outPut = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+      outPut[answer] = 1;
       this.outputData.push(outPut);
       cn.remove();
     }
@@ -144,11 +148,11 @@ export class RecognizaWithUndefinedComponent implements OnInit {
   initTFModel(): void {
     this.model = tf.sequential();
     this.model.add(tf.layers.dense(
-      { units: 25, inputShape: [100], /*batchInputShape: [ 100, 1], */ /*inputDim: 1,*/ activation: 'relu' }
+      { units: 30, inputShape: [100], /*batchInputShape: [ 100, 1], */ /*inputDim: 1,*/ activation: 'relu' }
     ));
-    // this.model.add(tf.layers.dense({ units: 10, activation: 'softmax' }));
-    this.model.add(tf.layers.dropout({ rate: 0.5 }));
-    this.model.add(tf.layers.dense({ units: 10, activation: 'softmax' }));
+    this.model.add(tf.layers.dense({ units: 22, activation: 'relu' }));
+    // this.model.add(tf.layers.dropout({ rate: 0.1 }));
+    this.model.add(tf.layers.dense({ units: 11, activation: 'softmax' }));
 
     this.model.compile({
       loss: 'meanSquaredError',
@@ -162,17 +166,18 @@ export class RecognizaWithUndefinedComponent implements OnInit {
     this.initTFModel();
     const inputList = [...this.inputData];
     const outputList = [...this.outputData];
-    const countTest = 50;
+    const countTest = 500;
     const countExamples = inputList.length - countTest;
+    console.log('countExamples:', countExamples);
 
     const xs = tf.tensor2d(inputList.splice(0, countExamples), [countExamples, 100], 'float32');
-    const ys = tf.tensor2d(outputList.splice(0, countExamples), [countExamples, 10], 'float32');
+    const ys = tf.tensor2d(outputList.splice(0, countExamples), [countExamples, 11], 'float32');
 
     const xsTest = tf.tensor2d(inputList, [countTest, 100], 'float32');
-    const ysTest = tf.tensor2d(outputList, [countTest, 10], 'float32');
+    const ysTest = tf.tensor2d(outputList, [countTest, 11], 'float32');
     console.log('-----Train-----');
     this.model.fit(xs, ys, {
-      epochs: 2500,
+      epochs: 400,
       batchSize: 100,
       validationData: [xsTest, ysTest],
       callbacks: {
@@ -222,24 +227,4 @@ export class RecognizaWithUndefinedComponent implements OnInit {
   onClear(): void {
     this.context.clearRect(0, 0, this.canvasRef.width, this.canvasRef.height);
   }
-
-  onDo(): void {
-    const model = tf.sequential();
-    model.add(tf.layers.dense({ units: 100, activation: 'relu', inputShape: [10] }));
-    model.add(tf.layers.dense({ units: 1, activation: 'linear' }));
-    model.compile({ optimizer: 'sgd', loss: 'meanSquaredError' });
-
-    const xs = tf.randomNormal([100, 10]);
-    const ys = tf.randomNormal([100, 1]);
-    console.log('RR:', xs.print());
-    console.log('TT', ys.print());
-    return;
-    model.fit(xs, ys, {
-      epochs: 100,
-      callbacks: {
-        onEpochEnd: (epoch, log) => console.log(`Epoch ${epoch}: loss = ${log.loss}`)
-      }
-    });
-  }
-
 }
