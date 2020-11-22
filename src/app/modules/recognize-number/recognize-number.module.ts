@@ -5,7 +5,10 @@ import { ImgPreviewComponent } from './img-preview/img-preview.component';
 import { RecognizeNumberTrainComponent } from './recognize-number-train/recognize-number-train.component';
 
 @NgModule({
-  declarations: [ImgPreviewComponent, RecognizeNumberTrainComponent],
+  declarations: [
+    ImgPreviewComponent,
+    RecognizeNumberTrainComponent
+  ],
   imports: [
     CommonModule,
     FormsModule

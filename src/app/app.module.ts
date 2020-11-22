@@ -6,6 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { AppRoutingModule } from './app-routing.module';
 import { HomeComponent } from './home/home.component';
 import { RecognizeNumberModule } from './modules/recognize-number/recognize-number.module';
+import { RecognizaWithUndefinedModule } from './modules/recogniza-with-undefined/recogniza-with-undefined.module';
 
 @NgModule({
   declarations: [
@@ -16,7 +17,8 @@ import { RecognizeNumberModule } from './modules/recognize-number/recognize-numb
     BrowserModule,
     FormsModule,
     AppRoutingModule,
-    RecognizeNumberModule
+    RecognizeNumberModule,
+    RecognizaWithUndefinedModule
   ],
   providers: [],
   bootstrap: [AppComponent]
