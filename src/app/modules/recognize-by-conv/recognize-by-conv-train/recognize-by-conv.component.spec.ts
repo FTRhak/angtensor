@@ -1,20 +1,20 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { ImgPreviewComponent } from './img-preview.component';
+import { RecognizeByConvComponent } from './recognize-by-conv.component';
 
-describe('ImgPreviewComponent', () => {
-  let component: ImgPreviewComponent;
-  let fixture: ComponentFixture<ImgPreviewComponent>;
+describe('RecognizeByConvComponent', () => {
+  let component: RecognizeByConvComponent;
+  let fixture: ComponentFixture<RecognizeByConvComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ ImgPreviewComponent ]
+      declarations: [ RecognizeByConvComponent ]
     })
     .compileComponents();
   });
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(ImgPreviewComponent);
+    fixture = TestBed.createComponent(RecognizeByConvComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

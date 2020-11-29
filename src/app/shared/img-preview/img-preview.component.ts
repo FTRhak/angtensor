@@ -9,6 +9,7 @@ export class ImgPreviewComponent implements OnInit, AfterViewInit {
   @ViewChild('cnv') cn: ElementRef;
   public answer: number = null;
   @Input() size = 10;
+  @Input() format = '2d';
   @Input() data: number[] = [];
   @Input() set value(val: number[]) {
     val.forEach((el, index) => {
@@ -32,15 +33,27 @@ export class ImgPreviewComponent implements OnInit, AfterViewInit {
     context.lineWidth = 1;
 
     const imagedata = context.createImageData(this.size, this.size);
-
-    for (let i = 0; i < this.size; i++) {
-      for (let j = 0; j < this.size; j++) {
-        const pixelindex = (i * this.size + j) * 4;
-        const pixel = this.data[i * this.size + j];
-        imagedata.data[pixelindex] = 0;
-        imagedata.data[pixelindex + 1] = 0;
-        imagedata.data[pixelindex + 2] = 0;
-        imagedata.data[pixelindex + 3] = Math.round(pixel * 255);
+    if (this.format === '3d') {
+      for (let i = 0; i < this.size; i++) {
+        for (let j = 0; j < this.size; j++) {
+          const pixelindex = (i * this.size + j) * 4;
+          const pixel = this.data[i][j];
+          imagedata.data[pixelindex] = 0;
+          imagedata.data[pixelindex + 1] = 0;
+          imagedata.data[pixelindex + 2] = 0;
+          imagedata.data[pixelindex + 3] = Math.round(pixel * 255);
+        }
+      }
+    } else {
+      for (let i = 0; i < this.size; i++) {
+        for (let j = 0; j < this.size; j++) {
+          const pixelindex = (i * this.size + j) * 4;
+          const pixel = this.data[i * this.size + j];
+          imagedata.data[pixelindex] = 0;
+          imagedata.data[pixelindex + 1] = 0;
+          imagedata.data[pixelindex + 2] = 0;
+          imagedata.data[pixelindex + 3] = Math.round(pixel * 255);
+        }
       }
     }
     context.putImageData(imagedata as any, 0, 0);

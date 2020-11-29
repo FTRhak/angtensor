@@ -1,12 +1,14 @@
-import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RecognizeByConvComponent } from './recognize-by-conv-train/recognize-by-conv.component';
 import { FormsModule } from '@angular/forms';
 import { SharedModule } from 'src/app/shared/shared.module';
-import { RecognizaWithUndefinedComponent } from './recogniza-with-undefined/recogniza-with-undefined.component';
+
+
 
 @NgModule({
   declarations: [
-    RecognizaWithUndefinedComponent
+    RecognizeByConvComponent
   ],
   imports: [
     CommonModule,
@@ -14,4 +16,4 @@ import { RecognizaWithUndefinedComponent } from './recogniza-with-undefined/reco
     SharedModule
   ]
 })
-export class RecognizaWithUndefinedModule { }
+export class RecognizeByConvModule { }

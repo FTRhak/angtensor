@@ -1,0 +1,19 @@
+.nav {
+  padding: 4px;
+  border: 1px solid #AAAAAA;
+  border-radius: 3px;
+  margin-top: 3px;
+  width: 300px;
+}
+
+.nav button {
+  margin-right: 3px;
+}
+
+.previews {
+  padding: 4px;
+  border: 1px solid #AAAAAA;
+  border-radius: 3px;
+  margin-top: 3px;
+  overflow: hidden;
+}

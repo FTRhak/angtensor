@@ -1,0 +1,31 @@
+<h1>Angular TF. Recognize By Conv</h1>
+<div class="nav">
+  <button (click)="onGo()">GO from Canvas</button>
+  <button (click)="onGoInput()">GO from Input</button>
+</div>
+<div>
+  <canvas #canvas width="100" height="100" 
+    (mousemove)="onCanvasMMove($event)"
+    style="border: 1px solid red;"></canvas>
+  <button (click)="onClear()">Clear</button>
+  <div>
+    <input type="text" maxlength="1" [(ngModel)]="inputNumber">
+  </div>
+  <div class="nav">
+    <span>{{inputData.length}}</span> |
+    <span>{{outputData.length}}</span>
+  </div>
+  <div class="nav">
+    <button (click)="onGenerateDataForTraining()">Generate</button>
+  </div>
+  <div class="nav">
+    <button (click)="onTryTrain()">Run Training</button>
+  </div>
+  
+  <div class="previews" *ngIf="showGeneratedItems">
+    <ng-container *ngFor="let item of inputData; index as i">
+      <app-img-preview [data]="item" [value]="outputData[i]" [size]="imgSize" format="3d"></app-img-preview>
+    </ng-container>
+  </div>
+    
+</div>

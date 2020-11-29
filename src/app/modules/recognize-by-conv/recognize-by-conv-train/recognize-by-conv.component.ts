@@ -1,13 +1,13 @@
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import * as tf from '@tensorflow/tfjs';
-import { SimbolImageGeneratorService } from 'src/app/services/simbol-image-generator.service';
+import { SimbolImageGeneratorService } from '../../../services/simbol-image-generator.service';
 
 @Component({
-  selector: 'app-recogniza-with-undefined',
-  templateUrl: './recogniza-with-undefined.component.html',
-  styleUrls: ['./recogniza-with-undefined.component.css']
+  selector: 'app-recognize-by-conv',
+  templateUrl: './recognize-by-conv.component.html',
+  styleUrls: ['./recognize-by-conv.component.css']
 })
-export class RecognizaWithUndefinedComponent implements OnInit {
+export class RecognizeByConvComponent implements OnInit {
 
   @ViewChild('canvas', { static: true })
   canvas: ElementRef<HTMLCanvasElement>;
@@ -20,65 +20,61 @@ export class RecognizaWithUndefinedComponent implements OnInit {
 
   public showGeneratedItems = false;
 
-  public generatedItems = 5000;
-  public itemsForValidation = 500;
-  public epochs = 500;
-  public batchSize = 100;
+  public generatedItems = 500;
+  public itemsForValidation = 50;
+  public epochs = 100;
+  public batchSize = 20;
+
+  public imgSize = 28;
 
   private model: tf.Sequential;
 
-  inputNumber: number;
+  inputNumber: string;
 
   constructor(
     private simbolImageGeneratorService: SimbolImageGeneratorService
   ) {}
 
-
   ngOnInit(): void {
-    this.initCanvas();
   }
 
   onGenerateDataForTraining(): void {
-    const undefinedItems = ['a', 'd', 't', '+', 'y', '-', 'f', 'w', 'v', '=', 'z', 'x', 's', '.', '^', 'r'];
     console.log('Start generating data');
     for (let k = 0; k < this.generatedItems; k++) {
-      let num: any = Math.floor(Math.random() * 13);
-      let answer = num;
-      if (num >= 10) {
-        const index = Math.round(Math.random() * (undefinedItems.length - 1));
-        num = undefinedItems[index];
-        answer = 10;
+      let num = Math.floor(Math.random() * 10);
+      if (num === 10) {
+        num = 9;
       }
-      const inputDataImg = this.simbolImageGeneratorService.getImageData(num);
+      const inputDataImg = this.simbolImageGeneratorService.getImageData3D(num, false, this.imgSize);
       this.inputData.push(inputDataImg);
-      const outPut = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+      const outPut = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
       outPut[num] = 1;
       this.outputData.push(outPut);
     }
     console.log('Completed generating data');
   }
 
-  exportString(content: string, file: string): void {
-    const element = document.createElement('a');
-    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(content));
-    element.setAttribute('download', file);
-
-    element.style.display = 'none';
-    document.body.appendChild(element);
-
-    element.click();
-
-    document.body.removeChild(element);
-  }
-
   initTFModel(): void {
     this.model = tf.sequential();
+    this.model.add(tf.layers.conv2d({
+      filters: 32,
+      kernelSize: [3, 3],
+      activation: 'relu',
+      // inputShape: [28, 28, 1]
+    }));
+    this.model.add(tf.layers.conv2d({
+      filters: 64,
+      kernelSize: [3, 3],
+      activation: 'relu'
+    }));
+    this.model.add(tf.layers.maxPooling2d({poolSize: [2, 2]}));
+    this.model.add(tf.layers.dropout({ rate: 0.25 }));
+    this.model.add(tf.layers.flatten());
     this.model.add(tf.layers.dense(
-      { units: 25, inputShape: [100], /*batchInputShape: [ 100, 1], */ /*inputDim: 1,*/ activation: 'relu' }
+      { units: 128, inputShape: [100], activation: 'relu' }
     ));
-    // this.model.add(tf.layers.dense({ units: 15, activation: 'relu' }));
-    this.model.add(tf.layers.dropout({ rate: 0.5}));
-    this.model.add(tf.layers.dense({ units: 11, activation: 'softmax' }));
+    this.model.add(tf.layers.dropout({ rate: 0.5 }));
+    this.model.add(tf.layers.dense({ units: 10, activation: 'softmax' }));
 
     this.model.compile({
       loss: 'meanSquaredError',
@@ -95,20 +91,20 @@ export class RecognizaWithUndefinedComponent implements OnInit {
     const countTest = this.itemsForValidation;
     const countExamples = inputList.length - countTest;
 
-    const xs = tf.tensor2d(inputList.splice(0, countExamples), [countExamples, 100], 'float32');
-    const ys = tf.tensor2d(outputList.splice(0, countExamples), [countExamples, 11], 'float32');
+    console.log(countExamples);
+    //console.log(outputList);
 
-    const xsTest = tf.tensor2d(inputList, [countTest, 100], 'float32');
-    const ysTest = tf.tensor2d(outputList, [countTest, 11], 'float32');
+    const xs = tf.tensor3d(inputList.splice(0, countExamples), [countExamples, 28, 28], 'float32');
+    const ys = tf.tensor2d(outputList.splice(0, countExamples), [countExamples, 10], 'float32');
 
-    console.log('-----Train-----');
+    const xsTest = tf.tensor3d(inputList, [countTest, 28, 28], 'float32');
+    const ysTest = tf.tensor2d(outputList, [countTest, 10], 'float32');
+
+    console.log('----------------Start Training-----------------');
     this.model.fit(xs, ys, {
       epochs: this.epochs,
       batchSize: this.batchSize,
       validationData: [xsTest, ysTest],
-      /*callbacks: [
-        tf.callbacks.earlyStopping({monitor: 'loss'})
-      ]*/
       callbacks: {
         onEpochEnd: (epoch, log) => {
           console.log(`Epoch ${epoch}: loss = ${log.loss}  val_loss = ${log.val_loss}  acc = ${log.acc}   val_acc = ${log.val_acc}`);
@@ -117,11 +113,9 @@ export class RecognizaWithUndefinedComponent implements OnInit {
     }).then((ev) => {
       console.log('History::', ev);
     });
-
-    // const score = this.model.evaluate(xsTest, ysTest, {verbose: 0 });
-    // console.log('SCORE:', score);
   }
 
+  // ================RESULT======================
   private loadImage(): number[] {
     const size = 10;
     const cn = document.createElement('canvas');
@@ -147,17 +141,8 @@ export class RecognizaWithUndefinedComponent implements OnInit {
   onGo(): void {
     const img = this.loadImage();
     const xs = tf.tensor2d([img], [1, 100], 'float32');
-    const res: any = this.model.predict(xs);
-    const resArray = res.arraySync();
-    let output = -1;
-    let vl = 0;
-    for (let i = 0; i < resArray[0].length; i++) {
-      if (resArray[0][i] > vl) {
-        vl = resArray[0][i];
-        output = i;
-      }
-    }
-    console.log('RESULT OUTPUT:', output);
+    const res = this.model.predict(xs).toString();
+    console.log('RESULT:', res);
   }
 
   onGoInput(): void {
@@ -166,8 +151,8 @@ export class RecognizaWithUndefinedComponent implements OnInit {
     const xs = tf.tensor2d([data], [1, 100], 'float32');
     const res: any = this.model.predict(xs);
     const resArray = res.arraySync();
-    console.log('RESULT: ', resArray[0]);
-    let output = -1;
+    console.log('RESULT: ', resArray);
+    let output = 0;
     let vl = 0;
     for (let i = 0; i < resArray[0].length; i++) {
       if (resArray[0][i] > vl) {
@@ -177,6 +162,9 @@ export class RecognizaWithUndefinedComponent implements OnInit {
     }
     console.log('INPUT: ', value, '    OUTPUT: ', output);
   }
+
+
+  // ===========CANVAS===========
   initCanvas(): void {
     this.canvasRef = this.canvas.nativeElement;
     this.context = this.canvasRef.getContext('2d');
@@ -204,4 +192,5 @@ export class RecognizaWithUndefinedComponent implements OnInit {
   onClear(): void {
     this.context.clearRect(0, 0, this.canvasRef.width, this.canvasRef.height);
   }
+
 }
