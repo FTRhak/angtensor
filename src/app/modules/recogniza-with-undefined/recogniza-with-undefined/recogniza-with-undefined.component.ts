@@ -1,5 +1,6 @@
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import * as tf from '@tensorflow/tfjs';
+import { SimbolImageGeneratorService } from 'src/app/services/simbol-image-generator.service';
 
 @Component({
   selector: 'app-recogniza-with-undefined',
@@ -17,17 +18,107 @@ export class RecognizaWithUndefinedComponent implements OnInit {
   public inputData = [];
   public outputData = [];
 
+  public showGeneratedItems = false;
+
+  public generatedItems = 5000;
+  public itemsForValidation = 500;
+  public epochs = 400;
+  public batchSize = 100;
+
   private model: tf.Sequential;
 
   inputNumber: number;
 
+  constructor(
+    private simbolImageGeneratorService: SimbolImageGeneratorService
+  ) {}
+
+
   ngOnInit(): void {
     this.initCanvas();
-
-    /**/
   }
 
-  private loadImage(): number[]  {
+  onGenerateDataForTraining(): void {
+    const undefinedItems = ['a', 'd', 't', '+', 'y', '-', 'f', 'w', 'v', '=', 'z', 'x', 's', '.', '^', 'r'];
+    console.log('Start generating data');
+    for (let k = 0; k < this.generatedItems; k++) {
+      let num: any = Math.floor(Math.random() * 13);
+      let answer = num;
+      if (num >= 10) {
+        const index = Math.round(Math.random() * (undefinedItems.length - 1));
+        num = undefinedItems[index];
+        answer = 10;
+      }
+      const inputDataImg = this.simbolImageGeneratorService.getImageData(num);
+      this.inputData.push(inputDataImg);
+      const outPut = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+      outPut[num] = 1;
+      this.outputData.push(outPut);
+    }
+    console.log('Completed generating data');
+  }
+
+  exportString(content: string, file: string): void {
+    const element = document.createElement('a');
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(content));
+    element.setAttribute('download', file);
+
+    element.style.display = 'none';
+    document.body.appendChild(element);
+
+    element.click();
+
+    document.body.removeChild(element);
+  }
+
+  initTFModel(): void {
+    this.model = tf.sequential();
+    this.model.add(tf.layers.dense(
+      { units: 25, inputShape: [100], /*batchInputShape: [ 100, 1], */ /*inputDim: 1,*/ activation: 'relu' }
+    ));
+    // this.model.add(tf.layers.dense({ units: 15, activation: 'relu' }));
+    this.model.add(tf.layers.dropout({ rate: 0.5}));
+    this.model.add(tf.layers.dense({ units: 11, activation: 'softmax' }));
+
+    this.model.compile({
+      loss: 'meanSquaredError',
+      optimizer: 'rmsprop',
+      metrics: ['accuracy']
+    });
+    console.log('Summary:: ', this.model.summary());
+  }
+
+  onTryTrain(): void {
+    this.initTFModel();
+    const inputList = [...this.inputData];
+    const outputList = [...this.outputData];
+    const countTest = this.itemsForValidation;
+    const countExamples = inputList.length - countTest;
+
+    const xs = tf.tensor2d(inputList.splice(0, countExamples), [countExamples, 100], 'float32');
+    const ys = tf.tensor2d(outputList.splice(0, countExamples), [countExamples, 11], 'float32');
+
+    const xsTest = tf.tensor2d(inputList, [countTest, 100], 'float32');
+    const ysTest = tf.tensor2d(outputList, [countTest, 11], 'float32');
+    console.log('-----Train-----');
+    this.model.fit(xs, ys, {
+      epochs: this.epochs,
+      batchSize: this.batchSize,
+      validationData: [xsTest, ysTest],
+      callbacks: {
+        onEpochEnd: (epoch, log) => {
+          console.log(`Epoch ${epoch}: loss = ${log.loss}  val_loss = ${log.val_loss}  acc = ${log.acc}   val_acc = ${log.val_acc}`);
+        }
+      }
+    }).then((ev) => {
+      console.log('History::', ev);
+    });
+
+    // const score = this.model.evaluate(xsTest, ysTest, {verbose: 0 });
+    // console.log('SCORE:', score);
+  }
+
+  private loadImage(): number[] {
     const size = 10;
     const cn = document.createElement('canvas');
     cn.setAttribute('class', 'img-example');
@@ -49,157 +140,39 @@ export class RecognizaWithUndefinedComponent implements OnInit {
     return inputDataImg;
   }
 
-  onAdd(): void {
-    if (this.inputNumber < 0 || this.inputNumber > 9) {
-      return;
-    }
-
-    const inputDataImg = this.loadImage();
-    const outPut = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-    outPut[this.inputNumber] = 1;
-
-    this.inputData.push(inputDataImg);
-    this.outputData.push(outPut);
-  }
-
-  onGenerate(): void {
-    const fontsCollection = ['serif', 'Arial', 'Verdana', 'system-ui', 'Verdana'];
-    const fCount = fontsCollection.length;
-    const undefinedItems = ['a', 'd', 't', '+', 'y', '-', 'f', 'w', 'v', '=', 'z', 'x', 's', '.', '^', 'r'];
-
-    for (let k = 0; k < 5000; k++) {
-      let num: any = Math.floor(Math.random() * 13);
-      let answer = num;
-      if (num >= 10) {
-        const index = Math.round(Math.random() * (undefinedItems.length - 1));
-        num = undefinedItems[index];
-        answer = 10;
-      }
-      const shiftX = Math.floor(Math.random() * 2);
-      const shiftY = Math.floor(Math.random() * 2);
-
-      const size = 10;
-      const cn = document.createElement('canvas');
-      cn.setAttribute('class', 'img-example');
-      cn.width = size;
-      cn.height = size;
-      const cnt = cn.getContext('2d');
-
-      const font = fontsCollection[Math.round(Math.random() * fCount)];
-      cnt.font = '10px ' + font;
-      cnt.fillText(num + '', shiftX, 10 - shiftY);
-      document.body.appendChild(cn);
-
-      const inputDataImg = [];
-      for (let i = 0; i < size; i++) {
-        for (let j = 0; j < size; j++) {
-          const img = cnt.getImageData(j, i, 1, 1).data;
-          const pixel = img[3]; // > 0 ? 1 : 0;
-          inputDataImg.push(pixel / 255);
-        }
-      }
-      this.inputData.push(inputDataImg);
-      const outPut = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-      outPut[answer] = 1;
-      this.outputData.push(outPut);
-      cn.remove();
-    }
-  }
-
-  onSave(): void {
-    const inputToString = JSON.stringify(this.inputData);
-    const outputToString = JSON.stringify(this.outputData);
-    if (inputToString) {
-      window.localStorage.setItem('input', inputToString);
-      window.localStorage.setItem('output', outputToString);
-    }
-  }
-
-  onLoad(): void {
-    const input = window.localStorage.getItem('input');
-    const output = window.localStorage.getItem('output');
-    this.inputData = JSON.parse(input);
-    this.outputData = JSON.parse(output);
-  }
-
-  exportString(content: string, file: string): void {
-    const element = document.createElement('a');
-    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(content));
-    element.setAttribute('download', file);
-
-    element.style.display = 'none';
-    document.body.appendChild(element);
-
-    element.click();
-
-    document.body.removeChild(element);
-  }
-  onExport(): void {
-    const input = window.localStorage.getItem('input');
-    const output = window.localStorage.getItem('output');
-    this.exportString(input, 'input.txt');
-    this.exportString(output, 'output.txt');
-  }
-
-  onImport(): void {
-
-  }
-
-  initTFModel(): void {
-    this.model = tf.sequential();
-    this.model.add(tf.layers.dense(
-      { units: 30, inputShape: [100], /*batchInputShape: [ 100, 1], */ /*inputDim: 1,*/ activation: 'relu' }
-    ));
-    this.model.add(tf.layers.dense({ units: 22, activation: 'relu' }));
-    // this.model.add(tf.layers.dropout({ rate: 0.1 }));
-    this.model.add(tf.layers.dense({ units: 11, activation: 'softmax' }));
-
-    this.model.compile({
-      loss: 'meanSquaredError',
-      optimizer: 'rmsprop',
-      metrics: ['accuracy']
-    });
-    console.log('RRRR', this.model.summary());
-  }
-
-  onTryTrain(): void {
-    this.initTFModel();
-    const inputList = [...this.inputData];
-    const outputList = [...this.outputData];
-    const countTest = 500;
-    const countExamples = inputList.length - countTest;
-    console.log('countExamples:', countExamples);
-
-    const xs = tf.tensor2d(inputList.splice(0, countExamples), [countExamples, 100], 'float32');
-    const ys = tf.tensor2d(outputList.splice(0, countExamples), [countExamples, 11], 'float32');
-
-    const xsTest = tf.tensor2d(inputList, [countTest, 100], 'float32');
-    const ysTest = tf.tensor2d(outputList, [countTest, 11], 'float32');
-    console.log('-----Train-----');
-    this.model.fit(xs, ys, {
-      epochs: 400,
-      batchSize: 100,
-      validationData: [xsTest, ysTest],
-      callbacks: {
-        onEpochEnd: (epoch, log) => {
-          console.log(`Epoch ${epoch}: loss = ${log.loss}  val_loss = ${log.val_loss}  acc = ${log.acc}   val_acc = ${log.val_acc}`);
-        }
-      }
-    }).then((ev) => {
-      console.log('History::', ev);
-    });
-
-    // const score = this.model.evaluate(xsTest, ysTest, {verbose: 0 });
-    // console.log('SCORE:', score);
-  }
-
   onGo(): void {
     const img = this.loadImage();
     const xs = tf.tensor2d([img], [1, 100], 'float32');
-    const res = this.model.predict(xs).toString();
-    console.log('RESULT:', res);
+    const res: any = this.model.predict(xs);
+    const resArray = res.arraySync();
+    let output = -1;
+    let vl = 0;
+    for (let i = 0; i < resArray[0].length; i++) {
+      if (resArray[0][i] > vl) {
+        vl = resArray[0][i];
+        output = i;
+      }
+    }
+    console.log('RESULT OUTPUT:', output);
   }
 
+  onGoInput(): void {
+    const value = this.inputNumber;
+    const data = this.simbolImageGeneratorService.getImageData(value, true);
+    const xs = tf.tensor2d([data], [1, 100], 'float32');
+    const res: any = this.model.predict(xs);
+    const resArray = res.arraySync();
+    console.log('RESULT: ', resArray);
+    let output = -1;
+    let vl = 0;
+    for (let i = 0; i < resArray[0].length; i++) {
+      if (resArray[0][i] > vl) {
+        vl = resArray[0][i];
+        output = i;
+      }
+    }
+    console.log('INPUT: ', value, '    OUTPUT: ', output);
+  }
   initCanvas(): void {
     this.canvasRef = this.canvas.nativeElement;
     this.context = this.canvasRef.getContext('2d');

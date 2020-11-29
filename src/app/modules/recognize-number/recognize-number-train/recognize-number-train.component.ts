@@ -88,6 +88,7 @@ export class RecognizeNumberTrainComponent implements OnInit {
       optimizer: 'rmsprop',
       metrics: ['accuracy']
     });
+    console.log('Summary:: ', this.model.summary());
   }
 
   onTryTrain(): void {
