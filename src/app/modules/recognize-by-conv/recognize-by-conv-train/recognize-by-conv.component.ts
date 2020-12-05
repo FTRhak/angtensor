@@ -20,7 +20,7 @@ export class RecognizeByConvComponent implements OnInit {
 
   public showGeneratedItems = false;
 
-  public generatedItems = 500;
+  public generatedItems = 200;
   public itemsForValidation = 50;
   public epochs = 100;
   public batchSize = 20;
@@ -55,12 +55,13 @@ export class RecognizeByConvComponent implements OnInit {
   }
 
   initTFModel(): void {
+    const size = this.imgSize;
     this.model = tf.sequential();
     this.model.add(tf.layers.conv2d({
       filters: 32,
       kernelSize: [3, 3],
       activation: 'relu',
-      // inputShape: [28, 28, 1]
+      inputShape: [size, size, 1]
     }));
     this.model.add(tf.layers.conv2d({
       filters: 64,
@@ -71,7 +72,7 @@ export class RecognizeByConvComponent implements OnInit {
     this.model.add(tf.layers.dropout({ rate: 0.25 }));
     this.model.add(tf.layers.flatten());
     this.model.add(tf.layers.dense(
-      { units: 128, inputShape: [100], activation: 'relu' }
+      { units: 128, activation: 'relu' }
     ));
     this.model.add(tf.layers.dropout({ rate: 0.5 }));
     this.model.add(tf.layers.dense({ units: 10, activation: 'softmax' }));
@@ -86,18 +87,19 @@ export class RecognizeByConvComponent implements OnInit {
 
   onTryTrain(): void {
     this.initTFModel();
+    const size = this.imgSize;
     const inputList = [...this.inputData];
     const outputList = [...this.outputData];
     const countTest = this.itemsForValidation;
     const countExamples = inputList.length - countTest;
 
-    console.log(countExamples);
-    //console.log(outputList);
+    // console.log(inputList);
+    // console.log(outputList);
 
-    const xs = tf.tensor3d(inputList.splice(0, countExamples), [countExamples, 28, 28], 'float32');
+    const xs = tf.tensor3d(inputList.splice(0, countExamples), [countExamples, size, size], 'float32');
     const ys = tf.tensor2d(outputList.splice(0, countExamples), [countExamples, 10], 'float32');
 
-    const xsTest = tf.tensor3d(inputList, [countTest, 28, 28], 'float32');
+    const xsTest = tf.tensor3d(inputList, [countTest, size, size], 'float32');
     const ysTest = tf.tensor2d(outputList, [countTest, 10], 'float32');
 
     console.log('----------------Start Training-----------------');
