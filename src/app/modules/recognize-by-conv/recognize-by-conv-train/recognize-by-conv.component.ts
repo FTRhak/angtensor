@@ -20,7 +20,7 @@ export class RecognizeByConvComponent implements OnInit {
 
   public showGeneratedItems = false;
 
-  public generatedItems = 200;
+  public generatedItems = 100;
   public itemsForValidation = 50;
   public epochs = 100;
   public batchSize = 20;
@@ -61,7 +61,7 @@ export class RecognizeByConvComponent implements OnInit {
       filters: 32,
       kernelSize: [3, 3],
       activation: 'relu',
-      inputShape: [size, size, 1]
+      inputShape: [size, size]
     }));
     this.model.add(tf.layers.conv2d({
       filters: 64,
@@ -106,10 +106,16 @@ export class RecognizeByConvComponent implements OnInit {
     this.model.fit(xs, ys, {
       epochs: this.epochs,
       batchSize: this.batchSize,
-      validationData: [xsTest, ysTest],
+      // validationData: [xsTest, ysTest],
       callbacks: {
         onEpochEnd: (epoch, log) => {
           console.log(`Epoch ${epoch}: loss = ${log.loss}  val_loss = ${log.val_loss}  acc = ${log.acc}   val_acc = ${log.val_acc}`);
+        },
+        onTrainBegin: (qqq) => {
+          console.log('--------------TrainBegin:', qqq);
+        },
+        onTrainEnd: (ttt) => {
+          console.log('--------------TrainEnd:', ttt);
         }
       }
     }).then((ev) => {
