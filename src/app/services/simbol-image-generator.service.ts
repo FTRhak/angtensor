@@ -38,8 +38,9 @@ export class SimbolImageGeneratorService {
     return inputDataImg;
   }
 
-  getImageData3D(value: any, displayRender = false, size = 10): number[][] {
-    const fontsCollection = ['serif', 'Arial', 'Verdana', 'system-ui', 'Verdana'];
+  getImageData3D(value: any, displayRender = false, size = 10): number[][][] {
+    const fontsCollection = ['serif', 'Arial', 'Verdana', 'system-ui', 'Verdana', 'Comic Sans MS'];
+    const colors = ['#FF0000', '#00FF00', '#0000FF'];
     const fCount = fontsCollection.length;
     const shiftX = Math.floor(Math.random() * 2);
     const shiftY = Math.floor(Math.random() * 2);
@@ -53,6 +54,7 @@ export class SimbolImageGeneratorService {
     const font = fontsCollection[Math.round(Math.random() * fCount)];
     cnt.font = size + 'px ' + font;
     cnt.fillText(value + '', shiftX, size - shiftY);
+    cnt.fillStyle = colors[Math.round(Math.random() * colors.length)];
     document.body.appendChild(cn);
 
     const inputDataImg = [];
@@ -62,7 +64,7 @@ export class SimbolImageGeneratorService {
       for (let j = 0; j < size; j++) {
         const img = cnt.getImageData(j, i, 1, 1).data;
         const pixel = img[3]; // > 0 ? 1 : 0;
-        line.push(pixel / 255);
+        line.push([pixel / 255]);
       }
       inputDataImg.push(line);
     }

@@ -20,9 +20,9 @@ export class RecognizeByConvComponent implements OnInit {
 
   public showGeneratedItems = false;
 
-  public generatedItems = 100;
-  public itemsForValidation = 50;
-  public epochs = 100;
+  public generatedItems = 10;
+  public itemsForValidation = 300;
+  public epochs = 20;
   public batchSize = 20;
 
   public imgSize = 28;
@@ -45,7 +45,7 @@ export class RecognizeByConvComponent implements OnInit {
       if (num === 10) {
         num = 9;
       }
-      const inputDataImg = this.simbolImageGeneratorService.getImageData3D(num, false, this.imgSize);
+      const inputDataImg = this.simbolImageGeneratorService.getImageData3D(num, true, this.imgSize);
       this.inputData.push(inputDataImg);
       const outPut = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
       outPut[num] = 1;
@@ -61,7 +61,7 @@ export class RecognizeByConvComponent implements OnInit {
       filters: 32,
       kernelSize: [3, 3],
       activation: 'relu',
-      inputShape: [size, size]
+      inputShape: [size, size, 1]
     }));
     this.model.add(tf.layers.conv2d({
       filters: 64,
@@ -93,20 +93,20 @@ export class RecognizeByConvComponent implements OnInit {
     const countTest = this.itemsForValidation;
     const countExamples = inputList.length - countTest;
 
-    // console.log(inputList);
+    console.log(inputList);
     // console.log(outputList);
 
-    const xs = tf.tensor3d(inputList.splice(0, countExamples), [countExamples, size, size], 'float32');
+    const xs = tf.tensor4d(inputList.splice(0, countExamples), [countExamples, size, size, 1], 'float32');
     const ys = tf.tensor2d(outputList.splice(0, countExamples), [countExamples, 10], 'float32');
 
-    const xsTest = tf.tensor3d(inputList, [countTest, size, size], 'float32');
+    const xsTest = tf.tensor4d(inputList, [countTest, size, size, 1], 'float32');
     const ysTest = tf.tensor2d(outputList, [countTest, 10], 'float32');
 
     console.log('----------------Start Training-----------------');
     this.model.fit(xs, ys, {
       epochs: this.epochs,
       batchSize: this.batchSize,
-      // validationData: [xsTest, ysTest],
+      validationData: [xsTest, ysTest],
       callbacks: {
         onEpochEnd: (epoch, log) => {
           console.log(`Epoch ${epoch}: loss = ${log.loss}  val_loss = ${log.val_loss}  acc = ${log.acc}   val_acc = ${log.val_acc}`);
@@ -155,8 +155,8 @@ export class RecognizeByConvComponent implements OnInit {
 
   onGoInput(): void {
     const value = this.inputNumber;
-    const data = this.simbolImageGeneratorService.getImageData(value, true);
-    const xs = tf.tensor2d([data], [1, 100], 'float32');
+    const data = this.simbolImageGeneratorService.getImageData3D(value, true, 28);
+    const xs = tf.tensor4d([data], [1, 28, 28, 1], 'float32');
     const res: any = this.model.predict(xs);
     const resArray = res.arraySync();
     console.log('RESULT: ', resArray);
