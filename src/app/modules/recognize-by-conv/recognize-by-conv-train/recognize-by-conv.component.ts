@@ -20,8 +20,8 @@ export class RecognizeByConvComponent implements OnInit {
 
   public showGeneratedItems = false;
 
-  public generatedItems = 10;
-  public itemsForValidation = 300;
+  public generatedItems = 500;
+  public itemsForValidation = 100;
   public epochs = 20;
   public batchSize = 20;
 
@@ -33,7 +33,7 @@ export class RecognizeByConvComponent implements OnInit {
 
   constructor(
     private simbolImageGeneratorService: SimbolImageGeneratorService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
   }
@@ -45,7 +45,7 @@ export class RecognizeByConvComponent implements OnInit {
       if (num === 10) {
         num = 9;
       }
-      const inputDataImg = this.simbolImageGeneratorService.getImageData3D(num, true, this.imgSize);
+      const inputDataImg = this.simbolImageGeneratorService.getImageData3D(num, false, this.imgSize);
       this.inputData.push(inputDataImg);
       const outPut = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
       outPut[num] = 1;
@@ -68,7 +68,7 @@ export class RecognizeByConvComponent implements OnInit {
       kernelSize: [3, 3],
       activation: 'relu'
     }));
-    this.model.add(tf.layers.maxPooling2d({poolSize: [2, 2]}));
+    this.model.add(tf.layers.maxPooling2d({ poolSize: [2, 2] }));
     this.model.add(tf.layers.dropout({ rate: 0.25 }));
     this.model.add(tf.layers.flatten());
     this.model.add(tf.layers.dense(
@@ -93,7 +93,7 @@ export class RecognizeByConvComponent implements OnInit {
     const countTest = this.itemsForValidation;
     const countExamples = inputList.length - countTest;
 
-    console.log(inputList);
+    // console.log(inputList);
     // console.log(outputList);
 
     const xs = tf.tensor4d(inputList.splice(0, countExamples), [countExamples, size, size, 1], 'float32');
@@ -107,6 +107,8 @@ export class RecognizeByConvComponent implements OnInit {
       epochs: this.epochs,
       batchSize: this.batchSize,
       validationData: [xsTest, ysTest],
+      // перемішує дані
+      // shuffle: true,
       callbacks: {
         onEpochEnd: (epoch, log) => {
           console.log(`Epoch ${epoch}: loss = ${log.loss}  val_loss = ${log.val_loss}  acc = ${log.acc}   val_acc = ${log.val_acc}`);
@@ -120,7 +122,19 @@ export class RecognizeByConvComponent implements OnInit {
       }
     }).then((ev) => {
       console.log('History::', ev);
+      console.log('MODEL:', this.model);
+      this.renderLeayrs(this.model, 0, 32, 9);
+      this.renderLeayrs(this.model, 1, 8, 4);
+      //this.renderLeayrs(this.model, 2, 10, 10); //18432
     });
+  }
+
+  private renderLeayrs(model, lNum = 0, sizeW: number, sizeH: number) {
+    model.getWeights()[lNum].data().then(res => {
+      console.log('NUM', lNum);
+      console.log(res);
+      this.simbolImageGeneratorService.renderImage(res, sizeW, sizeH);
+    })
   }
 
   // ================RESULT======================
