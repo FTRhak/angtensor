@@ -81,12 +81,12 @@ export class SimbolImageGeneratorService {
     cn.height = sizeH;
     const cnt = cn.getContext('2d');
     document.body.appendChild(cn);
-    var imagedata = cnt.createImageData(sizeW, sizeH);
+    const imagedata = cnt.createImageData(sizeW, sizeH);
     const min = Math.min(...value);
     const max = 1 / Math.max(...value);
 
     for (let i = 0; i < sizeW * sizeH; i++) {
-      var pixelindex = i * 4;
+      const pixelindex = i * 4;
       imagedata.data[pixelindex] = ((value[i] - min) * max) * 255;
       imagedata.data[pixelindex + 1] = 10;
       imagedata.data[pixelindex + 2] = 12;
