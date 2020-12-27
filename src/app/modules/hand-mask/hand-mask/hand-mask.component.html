@@ -1,0 +1,14 @@
+<h1>Angular TF. Hand Mask</h1>
+<div>
+  <div>
+    <label>Input:</label>
+    <input type="file" name="input_data" (change)="onChangeInput($event)">
+  </div>
+  <div>
+    <label>Output:</label>
+    <input type="file" name="output_data" (change)="onChangeOutput($event)">
+  </div>
+  <div>
+    <button (click)="startTrain()">Go</button>
+  </div>
+</div>

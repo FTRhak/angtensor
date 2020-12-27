@@ -95,7 +95,6 @@ export class RecognizeByConvComponent implements OnInit {
 
     // console.log(inputList);
     // console.log(outputList);
-
     const xs = tf.tensor4d(inputList.splice(0, countExamples), [countExamples, size, size, 1], 'float32');
     const ys = tf.tensor2d(outputList.splice(0, countExamples), [countExamples, 10], 'float32');
 

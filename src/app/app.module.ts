@@ -8,6 +8,7 @@ import { HomeComponent } from './home/home.component';
 import { RecognizeNumberModule } from './modules/recognize-number/recognize-number.module';
 import { RecognizaWithUndefinedModule } from './modules/recogniza-with-undefined/recogniza-with-undefined.module';
 import { RecognizeByConvModule } from './modules/recognize-by-conv/recognize-by-conv.module';
+import { HandMaskModule } from './modules/hand-mask/hand-mask.module';
 
 @NgModule({
   declarations: [
@@ -20,7 +21,8 @@ import { RecognizeByConvModule } from './modules/recognize-by-conv/recognize-by-
     AppRoutingModule,
     RecognizeNumberModule,
     RecognizaWithUndefinedModule,
-    RecognizeByConvModule
+    RecognizeByConvModule,
+    HandMaskModule
   ],
   providers: [],
   bootstrap: [AppComponent]
